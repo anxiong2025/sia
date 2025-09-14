@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package image.v1;
+
+option go_package = "sia/api/image/v1;imagev1";
+
+import "google/protobuf/timestamp.proto";
+
+// ImageService 图片生成服务
+service ImageService {
+  // GenerateImage 生成图片
+  rpc GenerateImage(GenerateImageRequest) returns (GenerateImageResponse);
+  
+  // GenerateImageAsync 异步生成图片
+  rpc GenerateImageAsync(GenerateImageRequest) returns (GenerateImageAsyncResponse);
+  
+  // GetImageTask 获取图片生成任务状态
+  rpc GetImageTask(GetImageTaskRequest) returns (GetImageTaskResponse);
+  
+  // GenerateSequentialImages 生成序列图片
+  rpc GenerateSequentialImages(GenerateSequentialImagesRequest) returns (GenerateImageResponse);
+  
+  // HealthCheck 健康检查
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// GenerateImageRequest 生成图片请求
+message GenerateImageRequest {
+  string prompt = 1;                    // 提示词
+  repeated string image_urls = 2;       // 参考图片URL（可选）
+  string model = 3;                     // 模型名称（可选）
+  string size = 4;                      // 图片尺寸（可选）
+  bool watermark = 5;                   // 是否添加水印
+  map<string, string> metadata = 6;     // 元数据
+}
+
+// GenerateImageResponse 生成图片响应
+message GenerateImageResponse {
+  string request_id = 1;                // 请求ID
+  repeated ImageData images = 2;        // 生成的图片
+  Usage usage = 3;                      // 使用统计
+  string model = 4;                     // 使用的模型
+  google.protobuf.Timestamp created_at = 5; // 创建时间
+}
+
+// GenerateImageAsyncResponse 异步生成图片响应
+message GenerateImageAsyncResponse {
+  string task_id = 1;                   // 任务ID
+  TaskStatus status = 2;                // 任务状态
+  google.protobuf.Timestamp created_at = 3; // 创建时间
+}
+
+// GenerateSequentialImagesRequest 生成序列图片请求
+message GenerateSequentialImagesRequest {
+  string prompt = 1;                    // 提示词
+  int32 max_images = 2;                 // 最大图片数量
+  string model = 3;                     // 模型名称（可选）
+  string size = 4;                      // 图片尺寸（可选）
+  bool watermark = 5;                   // 是否添加水印
+  map<string, string> metadata = 6;     // 元数据
+}
+
+// GetImageTaskRequest 获取图片生成任务请求
+message GetImageTaskRequest {
+  string task_id = 1;                   // 任务ID
+}
+
+// GetImageTaskResponse 获取图片生成任务响应
+message GetImageTaskResponse {
+  string task_id = 1;                   // 任务ID
+  TaskStatus status = 2;                // 任务状态
+  GenerateImageResponse result = 3;     // 生成结果（如果完成）
+  string error_message = 4;             // 错误信息（如果失败）
+  google.protobuf.Timestamp created_at = 5;   // 创建时间
+  google.protobuf.Timestamp updated_at = 6;   // 更新时间
+}
+
+// HealthCheckRequest 健康检查请求
+message HealthCheckRequest {}
+
+// HealthCheckResponse 健康检查响应
+message HealthCheckResponse {
+  HealthStatus status = 1;              // 健康状态
+  string message = 2;                   // 状态信息
+  map<string, string> details = 3;      // 详细信息
+}
+
+// ImageData 图片数据
+message ImageData {
+  string url = 1;                       // 图片URL
+  string b64_json = 2;                  // Base64编码的图片数据（可选）
+  string revised_prompt = 3;            // 修订后的提示词
+}
+
+// Usage 使用统计
+message Usage {
+  int32 prompt_tokens = 1;              // 提示词token数
+  int32 completion_tokens = 2;          // 完成token数
+  int32 total_tokens = 3;               // 总token数
+}
+
+// TaskStatus 任务状态
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_PENDING = 1;              // 等待中
+  TASK_STATUS_PROCESSING = 2;           // 处理中
+  TASK_STATUS_COMPLETED = 3;            // 已完成
+  TASK_STATUS_FAILED = 4;               // 失败
+}
+
+// HealthStatus 健康状态
+enum HealthStatus {
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  HEALTH_STATUS_SERVING = 1;            // 正常服务
+  HEALTH_STATUS_NOT_SERVING = 2;        // 不可用
+  HEALTH_STATUS_UNKNOWN = 3;            // 未知状态
+}
